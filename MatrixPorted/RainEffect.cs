@@ -23,9 +23,8 @@ namespace MatrixPorted
 		{
 			Random random = new Random();
 			for (int x = 0; x < this.terminalMask.GetLength(0); x++) {
-				for (int y = 0; y < this.terminalMask.GetLength(1); y++) {
+				for (int y = 0; y < this.terminalMask.GetLength(1) - Font.SKULL.GetLength(0); y++) {
 					this.terminalMask[x, y] = true;
-					this.terminalContent[x, y].Item3 = 0;
 				}
 			}
 			bool updated = false;
@@ -35,8 +34,8 @@ namespace MatrixPorted
 					if (this.reactivate_effect) {
 						this.terminalMask[idx, rainMask[idx]] = true;
 						this.terminalContent[idx, rainMask[idx]].Item1 = (char)(random.Next() % ('z' - '!') + '!');
-						this.terminalContent[idx, rainMask[idx]].Item2 = random.Next() % 128;
-						this.terminalContent[idx, rainMask[idx]].Item3 = ((random.Next() % 2) * 2 - 1) * (random.Next() % 5 + 1);
+						this.terminalContent[idx, rainMask[idx]].Item2 = random.Next() % 88 + 40;
+						this.terminalContent[idx, rainMask[idx]].Item3 = (random.Next() % 5) - 2;
 					} else {
 						if ((!this.terminalTargetMask[idx, rainMask[idx]]) ^ targetMaskValue) {
 							this.terminalMask[idx, rainMask[idx]] = false;
@@ -45,7 +44,7 @@ namespace MatrixPorted
 							this.terminalContent[idx, rainMask[idx]].Item3 = 0;
 						} else {
 							this.terminalMask[idx, rainMask[idx]] = true;
-							this.terminalContent[idx, rainMask[idx]].Item3 = ((random.Next() % 2) * 2 - 1) * (random.Next() % 5 + 1);
+							this.terminalContent[idx, rainMask[idx]].Item3 = (random.Next() % 5) - 2;
 						}
 					}
 				}
