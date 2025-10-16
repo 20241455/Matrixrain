@@ -4,15 +4,15 @@ using Timer = System.Timers.Timer;
 namespace MatrixPorted
 {
 	public abstract class Effect {
-		public bool[,] terminalTargetMask;
-		public bool[,] terminalMask;
+		public TerminalCharFlag[,] terminalTargetMask;
+		public TerminalCharFlag[,] terminalMask;
 		public (char, int, int)[,] terminalContent;
-		public Timer updateTimer = new Timer(50);
+		public Timer updateTimer = new Timer(40);
 		public abstract void UpdateTimer(Object? obj, System.Timers.ElapsedEventArgs _);
 		public event FinishedDelegate Finished;
 	
 		public delegate void FinishedDelegate();
-		public Effect(bool[,] targetmask, bool[,] mask, (char, int, int)[,] terminalContent)
+		public Effect(TerminalCharFlag[,] targetmask, TerminalCharFlag[,] mask, (char, int, int)[,] terminalContent)
 		{
 			this.terminalTargetMask = targetmask;
 			this.terminalMask = mask;

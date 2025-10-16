@@ -1,7 +1,8 @@
 # Matrixregen
 
 ## Vorschau
-Todo!
+
+https://github.com/user-attachments/assets/4510b581-3766-4e82-85c5-9ca46ec7e3d0
 
 ## Bedienung
 1. Namen direkt eingeben trotz des Mangels eines Eingabefensters.

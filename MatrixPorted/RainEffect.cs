@@ -10,7 +10,7 @@ namespace MatrixPorted
 		int[] rainMask;
 		bool targetMaskValue = false;
 		bool reactivate_effect;
-		public RainEffect(bool[,] targetmask, bool[,] mask, (char, int, int)[,] content, bool activeeffect) : base(targetmask, mask, content)
+		public RainEffect(TerminalCharFlag[,] targetmask, TerminalCharFlag[,] mask, (char, int, int)[,] content, bool activeeffect) : base(targetmask, mask, content)
 		{
 			this.reactivate_effect = activeeffect;
 			Random random = new Random();
@@ -24,7 +24,7 @@ namespace MatrixPorted
 			Random random = new Random();
 			for (int x = 0; x < this.terminalMask.GetLength(0); x++) {
 				for (int y = 0; y < this.terminalMask.GetLength(1) - Font.SKULL.GetLength(0); y++) {
-					this.terminalMask[x, y] = true;
+					this.terminalMask[x, y] &= ~TerminalCharFlag.NoRespawn;
 				}
 			}
 			bool updated = false;
@@ -32,18 +32,18 @@ namespace MatrixPorted
 				if (rainMask[idx] < this.terminalMask.GetLength(1) && rainMask[idx] >= 0) {
 					updated = true;
 					if (this.reactivate_effect) {
-						this.terminalMask[idx, rainMask[idx]] = true;
+						this.terminalMask[idx, rainMask[idx]] = 0;
 						this.terminalContent[idx, rainMask[idx]].Item1 = (char)(random.Next() % ('z' - '!') + '!');
 						this.terminalContent[idx, rainMask[idx]].Item2 = random.Next() % 88 + 40;
 						this.terminalContent[idx, rainMask[idx]].Item3 = (random.Next() % 5) - 2;
 					} else {
-						if ((!this.terminalTargetMask[idx, rainMask[idx]]) ^ targetMaskValue) {
-							this.terminalMask[idx, rainMask[idx]] = false;
+						if (((this.terminalTargetMask[idx, rainMask[idx]] & TerminalCharFlag.NoRespawn) != 0) != targetMaskValue) {
+							this.terminalMask[idx, rainMask[idx]] |= TerminalCharFlag.NoRespawn;
 							this.terminalContent[idx, rainMask[idx]].Item1 = ' ';
 							this.terminalContent[idx, rainMask[idx]].Item2 = 0;
 							this.terminalContent[idx, rainMask[idx]].Item3 = 0;
 						} else {
-							this.terminalMask[idx, rainMask[idx]] = true;
+							this.terminalMask[idx, rainMask[idx]] = this.terminalTargetMask[idx, rainMask[idx]];
 							this.terminalContent[idx, rainMask[idx]].Item3 = (random.Next() % 5) - 2;
 						}
 					}

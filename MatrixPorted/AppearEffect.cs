@@ -11,7 +11,7 @@ namespace MatrixPorted
 		int tick_counter = 1;
 		int text_amount = 0;
 		bool enable_tick_counter = false;
-		public AppearEffect(int textamount, bool[,] targetmask, bool[,] mask, (char, int, int)[,] content) : base(targetmask, mask, content)
+		public AppearEffect(int textamount, TerminalCharFlag[,] targetmask, TerminalCharFlag[,] mask, (char, int, int)[,] content) : base(targetmask, mask, content)
 		{
 		}
 		public override void UpdateTimer(Object? __, System.Timers.ElapsedEventArgs _)
@@ -38,15 +38,14 @@ namespace MatrixPorted
 					int xoffset = this.tick_counter / 4 * 8 - 8;
 					for (int x = xoffset; x < xoffset + 8; x++) {
 						for (int y = 0; y < this.terminalMask.GetLength(1) - Font.SKULL.GetLength(0); y++) {
-							if (this.terminalTargetMask[x, y]) {
-								this.terminalMask[x, y] = true;
+							this.terminalMask[x, y] = this.terminalTargetMask[x, y];
+							if (this.terminalTargetMask[x, y] != TerminalCharFlag.NoRespawn) {
 								this.terminalContent[x, y] = (
 									(char)(random.Next() % ('z' - '!') + '!'),
 									random.Next() % 88 + 40,
 									random.Next() % 5 - 2
 								);
 							} else {
-								this.terminalMask[x, y] = false;
 								this.terminalContent[x, y] = (' ', 0, 0);
 							}
 						}

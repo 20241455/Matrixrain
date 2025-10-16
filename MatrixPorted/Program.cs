@@ -3,11 +3,17 @@ using System.Timers;
 using Timer = System.Timers.Timer;
 
 namespace MatrixPorted {
+
+	public enum TerminalCharFlag
+	{
+		Bright = 1 << 0,
+		NoRespawn = 1 << 1
+	}
 	class Program {
 		static Timer updateTimer = new(70);
-		static (char, int, int)[,] terminalContent = new (char, int, int)[0, 0];
-		static bool[,] terminalLifetimeMask = new bool[0, 0];
-		static bool[,]? targetMask;
+		static (char, int, int)[,] terminalContent = new (char, int, int)[0,0];
+		static TerminalCharFlag[,] terminalMask = new TerminalCharFlag[0, 0];
+		static TerminalCharFlag[,] targetMask = new TerminalCharFlag[0, 0];
 		static string cmdline = "";
 		static string prevcmdline = "";
 		static bool command_active = false;
@@ -49,14 +55,14 @@ namespace MatrixPorted {
 		static void ResizeTerminalContent()
 		{
 			(char, int, int)[,] oldTerminalContent = ((char, int, int)[,])terminalContent.Clone();
-			bool[,] oldLifetimeMask = (bool[,])terminalLifetimeMask.Clone();
+			TerminalCharFlag[,] oldMask = (TerminalCharFlag[,])terminalMask.Clone();
 			terminalContent = new (char, int, int)[Console.WindowWidth, Console.WindowHeight];
-			terminalLifetimeMask = new bool[Console.WindowWidth, Console.WindowHeight];
+			terminalMask = new TerminalCharFlag[Console.WindowWidth, Console.WindowHeight];
 
 			for (int y = 0; y < Math.Min(terminalContent.GetLength(1), oldTerminalContent.GetLength(1)); y++) {
 				for (int x = 0; x < Math.Min(terminalContent.GetLength(0), oldTerminalContent.GetLength(0)); x++) {
 					terminalContent[x, y] = oldTerminalContent[x, y];
-					terminalLifetimeMask[x, y] = oldLifetimeMask[x, y];
+					terminalMask[x, y] = oldMask[x, y];
 				}
 			}
 			if (!command_active) {
@@ -68,7 +74,7 @@ namespace MatrixPorted {
 								random.Next() % 88 + 40,
 								RandomDifference()
 							);
-							terminalLifetimeMask[x, y] = true;
+							terminalMask[x, y] = 0;
 						}
 					}
 				}
@@ -77,10 +83,10 @@ namespace MatrixPorted {
 
 		/// Update color of character (by adding third item to second item) and if the color is below 40 or above 127,
 		/// then the differential item gets inverted and the character gets randomized, if mask is set to true.
-		static void UpdateChar(ref (char, int, int) character, ref bool mask)
+		static void UpdateChar(ref (char, int, int) character, in TerminalCharFlag mask)
 		{
 			if (character.Item3 != 0 && (character.Item2 <= 40 || character.Item2 >= 127)) {
-				if (mask) {
+				if (mask != TerminalCharFlag.NoRespawn) {
 					character.Item1 = (char)(random.Next() % ('z' - '!') + '!');
 					character.Item3 *= -1;
 				} else {
@@ -101,7 +107,7 @@ namespace MatrixPorted {
 			int yl = terminalContent.GetLength(1);
 			
 			for (int x = 0; x < terminalContent.GetLength(0); x++) {
-				Parallel.For(0, yl, y => UpdateChar(ref terminalContent[x, y], ref terminalLifetimeMask[x, y]));
+				Parallel.For(0, yl, y => UpdateChar(ref terminalContent[x, y], terminalMask[x, y]));
 			}
 		}
 		/// <summary>
@@ -131,7 +137,8 @@ namespace MatrixPorted {
 				string line = "";
 				for (int x = 0; x < terminalContent.GetLength(0); x++) {
 					(char, int, int) ch = terminalContent[x, y];
-					line += ColorizeText(ch.Item1, ch.Item2 + 40, ch.Item2 / 2 + 40);
+					int brightness = (terminalMask[x, y] & TerminalCharFlag.Bright) != 0 ? 50 : 0;
+					line += ColorizeText(ch.Item1, ch.Item2 + brightness, ch.Item2 / 2 + brightness);
 				}
 				Console.Write(line);
 			}
@@ -143,17 +150,17 @@ namespace MatrixPorted {
 			last_command_active = command_active;
 			ClearMask(false, Console.WindowWidth, command_active ? Console.WindowHeight - Font.SKULL.GetLength(0) : Console.WindowHeight);
 			command_active = true;
-			targetMask = (bool[,])terminalLifetimeMask.Clone();
+			targetMask = (TerminalCharFlag[,])terminalMask.Clone();
 			int yskulloffset = Console.WindowHeight - Font.SKULL.GetLength(0);
 			int xskulloffset = Console.WindowWidth - Font.SKULL.GetLength(1);
 			for (int x = 0; x < Font.SKULL.GetLength(0); x++) {
 				for (int y = 0; y < Font.SKULL.GetLength(1); y++) {
-					targetMask[y, x + yskulloffset] = Font.SKULL[x, y];
+					targetMask[y, x + yskulloffset] = Font.SKULL[x, y] ? 0 : TerminalCharFlag.NoRespawn;
 				}
 			}
 			for (int x = 0; x < Font.SKULL.GetLength(0); x++) {
 				for (int y = 0; y < Font.SKULL.GetLength(1); y++) {
-					targetMask[y + xskulloffset, x + yskulloffset] = Font.SKULL[x, y];
+					targetMask[y + xskulloffset, x + yskulloffset] = Font.SKULL[x, y] ? 0 : TerminalCharFlag.NoRespawn;
 				}
 			}
 			int min_fixed_x = int.MaxValue;
@@ -170,21 +177,18 @@ namespace MatrixPorted {
 
 					for (int x = 0; x < 8; x++) {
 						for (int y = 0; y < 8; y++) {
-							targetMask[x + idx * 8 + fixedx, y + fixedy + (PUSH_DOWN_CHARS.Contains(slice[idx]) ? 2 : 0)] = ((bitmap >> (y * 8 + x)) & 0x1) == 0x1;
+							targetMask[x + idx * 8 + fixedx, y + fixedy + (PUSH_DOWN_CHARS.Contains(slice[idx]) ? 2 : 0)] = ((bitmap >> (y * 8 + x)) & 0x1) == 0x1 ? TerminalCharFlag.Bright : TerminalCharFlag.NoRespawn;
 						}
 					}
 				}
 			}
-			/*StartEffect();
-		}
-		static void StartEffect()
-		{*/
+
 			switch (counter++ % 2) {
 				case 0:
-					currentEffect = new RainEffect(targetMask, terminalLifetimeMask, terminalContent, last_command_active);
+					currentEffect = new RainEffect(targetMask, terminalMask, terminalContent, last_command_active);
 					break;
 				case 1:
-					currentEffect = new AppearEffect(message.Length, targetMask, terminalLifetimeMask, terminalContent);
+					currentEffect = new AppearEffect(message.Length, targetMask, terminalMask, terminalContent);
 					break;
 			}
 		}
@@ -199,15 +203,15 @@ namespace MatrixPorted {
 			command_active = false;
 			for (int x = 0; x < width; x++) {
 				for (int y = 0; y < height; y++) {
-					if (state && !terminalLifetimeMask[x, y]) {
-						terminalLifetimeMask[x, y] = true;
+					if (state && terminalMask[x, y] == TerminalCharFlag.NoRespawn) {
+						terminalMask[x, y] = TerminalCharFlag.Bright;
 						terminalContent[x, y] = (
 							(char)(random.Next() % ('z' - '!') + '!'),
 							random.Next() % 88 + 40,
 							RandomDifference()
 						);
-					} else if (!state && terminalLifetimeMask[x, y]) {
-						terminalLifetimeMask[x, y] = false;
+					} else if (!state && terminalMask[x, y] != TerminalCharFlag.NoRespawn) {
+						terminalMask[x, y] = TerminalCharFlag.NoRespawn;
 						terminalContent[x, y].Item3 = RandomDifference();
 					}
 				}
