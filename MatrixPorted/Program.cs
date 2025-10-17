@@ -203,8 +203,8 @@ namespace MatrixPorted {
 			command_active = false;
 			for (int x = 0; x < width; x++) {
 				for (int y = 0; y < height; y++) {
-					if (state && terminalMask[x, y] == TerminalCharFlag.NoRespawn) {
-						terminalMask[x, y] = TerminalCharFlag.Bright;
+					if (state && terminalMask[x, y] != 0) {
+						terminalMask[x, y] = 0;
 						terminalContent[x, y] = (
 							(char)(random.Next() % ('z' - '!') + '!'),
 							random.Next() % 88 + 40,
@@ -282,8 +282,12 @@ namespace MatrixPorted {
 			while (handlePressedKey(Console.ReadKey().KeyChar)) {}
 
 			SetConsoleMode(handle, mode);
+			updateTimer.Enabled = false;
+
+			Console.ForegroundColor = ConsoleColor.Gray;
+			Console.CursorVisible = true;
 			Console.Clear();
-			Console.ForegroundColor = ConsoleColor.White;
+			
 		}
 	}
 }
