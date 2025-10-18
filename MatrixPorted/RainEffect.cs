@@ -22,11 +22,7 @@ namespace MatrixPorted
 		public override void UpdateTimer(Object __, System.Timers.ElapsedEventArgs _)
 		{
 			Random random = new Random();
-			for (int x = 0; x < this.terminalMask.GetLength(0); x++) {
-				for (int y = 0; y < this.terminalMask.GetLength(1) - Font.SKULL.GetLength(0); y++) {
-					this.terminalMask[x, y] &= ~TerminalCharFlag.NoRespawn;
-				}
-			}
+
 			bool updated = false;
 			for (int idx = 0; idx < rainMask.Length; idx++) {
 				if (rainMask[idx] < this.terminalMask.GetLength(1) && rainMask[idx] >= 0) {
